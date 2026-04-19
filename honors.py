@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 st.set_page_config(page_title="Loneliness Project", layout="wide")
 
@@ -42,6 +43,14 @@ def save_message(name, contact, message):
         return response.status_code in [200, 201]
     except:
         return False
+
+def format_time(utc_time_str):
+    try:
+        dt = datetime.fromisoformat(utc_time_str.replace("Z", "+00:00"))
+        local_dt = dt.astimezone(ZoneInfo("America/New_York"))
+        return local_dt.strftime("%Y-%m-%d %I:%M:%S %p")
+    except:
+        return utc_time_str
 
 st.title("Group: Carina, Alexis, RJ, Tian")
 st.write("This page collects our current literature review materials and provides a place for students to leave a message if they feel isolated or want connection.")
