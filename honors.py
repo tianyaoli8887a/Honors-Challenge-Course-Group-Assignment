@@ -1,101 +1,56 @@
 import streamlit as st
-
 import requests
-
 from datetime import datetime
 
 st.set_page_config(page_title="Loneliness Project", layout="wide")
 
 SUPABASE_URL = "https://mkdvrtnedxlwwgsdittp.supabase.co"
-
 SUPABASE_KEY = "sb_publishable_3JxtHu0cEXGphAvOVAoa-A_Ho9lG4jF"
 
 HEADERS = {
-
     "apikey": SUPABASE_KEY,
-
     "Authorization": f"Bearer {SUPABASE_KEY}",
-
     "Content-Type": "application/json",
-
 }
 
 def load_messages():
-
     try:
-
         response = requests.get(
-
             f"{SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc",
-
             headers=HEADERS,
-
             timeout=10,
-
         )
-
         if response.status_code == 200:
-
             return response.json()
-
         return []
-
     except:
-
         return []
 
 def save_message(name, contact, message):
-
     payload = {
-
         "name": name.strip() if name.strip() else "Anonymous",
-
         "contact": contact.strip(),
-
         "message": message.strip(),
-
     }
-
     try:
-
         response = requests.post(
-
             f"{SUPABASE_URL}/rest/v1/messages",
-
             headers=HEADERS,
-
             json=payload,
-
             timeout=10,
-
         )
-
         return response.status_code in [200, 201]
-
     except:
-
         return False
 
 st.title("Group: Carina, Alexis, RJ, Tian")
+st.write("This page collects our current literature review materials and provides a place for students to leave a message if they feel isolated or want connection.")
 
-st.write(
-
-    "This page collects our current literature review materials and provides a place for students to leave a message if they feel isolated or want connection."
-
-)
-
-tab1, tab2, tab3, tab4 = st.tabs(
-
-    ["Landing Page", "Literature Review", "Why This Matters", "Leave a Message"]
-
-)
+tab1, tab2, tab3, tab4 = st.tabs(["Landing Page", "Literature Review", "Why This Matters", "Leave a Message"])
 
 with tab1:
-
     st.write("Credit: Carina, Alexis, RJ")
-
     st.markdown("""
-
 ### Loneliness epidemic (broad)
 
 Loneliness is defined as being a situation in which an individual feels an unpleasant lack of quality relationships (Batsleer and Duggan 17). Since loneliness was first formally quantified in the 1960s, the urgency of the loneliness epidemic has continued to increase, despite advances in technology that have reduced the cost and increased the ease of communicating with loved ones. A survey conducted by Cigna in 2018 of more than 20,000 U.S. adults ages 18 years and older revealed that almost half of Americans report sometimes or always feeling alone or left out, one in four Americans rarely or never feel as though there are people who really understand them, and one in five people report they rarely or never feel close to people.
@@ -107,15 +62,11 @@ Many students experience significant social, emotional, and financial challenges
 ### Loneliness at AU
 
 Many college freshmen, and especially those at American University, enter college without having close relationships with their peers. For a majority of students, these bonds start to develop over the first two weeks as friend groups begin to form. However, there is a significant number of students for whom these bonds don’t develop over this crucial period, or those whose friend groups dissolve, leaving them feeling socially isolated. Many colleges, such as American University offer social activities and promote clubs during this initial time period in an effort to encourage social bonding, but not all students are able to connect with others during this time, or feel isolated later in the semester after these activities and the socially-ideal time to form friend groups has ended. After this period is over, it is difficult for many of these students to join existing social groups, contributing to loneliness in the campus environment. This loneliness, besides contributing to the higher rate of college transfers at American University compared to other private schools in the DMV area, is detrimental to student mental health and wellbeing overall (American University, 2024; CollegeRaptor, 2026).
-
 """)
 
 with tab2:
-
     st.write("Credit: Carina, Alexis, RJ")
-
     st.markdown("""
-
 ### Biological effects of loneliness on college students
 
 Loneliness is not only a social or emotional experience but also a biological condition that has measurable effects on the brain and body. A central mechanism underlying these effects is the hypothalamic-pituitary-adrenal (HPA) axis, the body’s primary stress response system. When individuals perceive themselves as socially isolated, the brain interprets this as a potential threat, activating the HPA axis and leading to the release of cortisol, a key stress hormone (Freilich et al., 2024; Mavrych et al., 2025).
@@ -141,15 +92,11 @@ Of course, some studies rebuke that there is a strong interaction between financ
 ### Purpose of our study
 
 The purpose of this study was to better understand and address loneliness among college students by examining how social behaviors, financial health, and biological well-being interact to shape overall connection and isolation. Rather than viewing loneliness as just an emotional state, this study approaches it as a multidimensional issue influenced by how students engage with others (through reciprocation, endurance, and proactivity), as well as external stressors like financial strain and effects on physical and mental health. Using a 43-question survey and a mathematical model of group dynamics, we aimed to identify patterns that explain why some students feel more connected while others experience persistent loneliness. By integrating social, financial, and biological dimensions, this research provides a more comprehensive framework for understanding loneliness in college settings and highlights practical ways students and communities can work to reduce isolation and improve overall well-being.
-
 """)
 
 with tab3:
-
     st.write("Credit: Carina, Alexis, RJ")
-
     st.markdown("""
-
 ### Methods (survey description) (Separate page from landing)
 
 ### How I came up with the equation and how the scores were calculated
@@ -209,77 +156,39 @@ Get group picture to put on page?
 (Start off with broad loneliness epidemic, then switch to our work on college students in general, then college students at AU, maybe break it up into different pages? Make sure citations are consistent, emphasize how our work is new and significant, add limitations/future research section, “meet the researchers” tab)
 
 (Need to add what problem survey is solving, how it helps college students)
-
 """)
 
 with tab4:
-
     st.write("Credit: Carina, Alexis, RJ")
-
     st.header("Leave a Message")
-
     st.write("If someone feels isolated, they can leave a short message below.")
 
     with st.form("message_form"):
-
         name = st.text_input("Your name or username")
-
         contact = st.text_input("Your contact (optional)")
-
         message = st.text_area("Your message")
-
         submitted = st.form_submit_button("Post Message")
 
         if submitted:
-
             if message.strip():
-
-                messages = load_messages()
-
-                messages.append(
-
-                    {
-
-                        "name": name.strip() if name.strip() else "Anonymous",
-
-                        "contact": contact.strip(),
-
-                        "message": message.strip(),
-
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-
-                    }
-
-                )
-
-                save_messages(messages)
-
-                st.success("Your message has been posted.")
-
+                success = save_message(name, contact, message)
+                if success:
+                    st.success("Your message has been posted.")
+                else:
+                    st.error("Failed to post message. Please try again.")
             else:
-
                 st.warning("Please enter a message before posting.")
 
     st.subheader("Recent Messages")
-
     messages = load_messages()
 
     if messages:
-
-        for msg in reversed(messages):
-
+        for msg in messages:
             st.markdown("---")
-
             st.write(f"**Name:** {msg.get('name', '')}")
-
             if msg.get("contact", ""):
-
                 st.write(f"**Contact:** {msg.get('contact', '')}")
-
             st.write(f"**Message:** {msg.get('message', '')}")
-
-            st.write(f"**Time:** {msg.get('time', '')}")
-
+            st.write(f"**Time:** {msg.get('created_at', '')}")
     else:
-
         st.info("No messages yet.")
