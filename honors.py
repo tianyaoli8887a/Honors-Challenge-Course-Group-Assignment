@@ -410,7 +410,7 @@ result_summary = [
     },
 ]
 
-st.title("Loneliness Project")
+st.title("Honors Project")
 st.caption("Group: Carina, Alexis, RJ, Tian")
 st.write(
     "This website collects the group's current literature review materials, survey design, early data analysis, and a place for students to leave a message if they feel isolated or want connection."
