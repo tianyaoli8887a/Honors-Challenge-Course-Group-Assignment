@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 import requests
 import streamlit as st
 
-st.set_page_config(page_title="Loneliness Project", layout="wide")
+st.set_page_config(page_title="Owners Project", layout="wide")
 
 SUPABASE_URL = "https://mkdvrtnedxlwwgsdittp.supabase.co"
 SUPABASE_KEY = "sb_publishable_3JxtHu0cEXGphAvOVAoa-A_Ho9lG4jF"
@@ -151,13 +151,6 @@ GROUP_SUMMARY = [
     {"Group": 5, "Average Raw Score": 44.2, "Average Normalized S": 0.670, "Members": 6},
 ]
 
-TEAM_NOTES = [
-    "Carina: add significance information and find pictures.",
-    "RJ: finish methods section and add significance and limitations information.",
-    "Alexis: add significance and limitations information.",
-    "Tianyao: transfer new text onto website and add colors and pictures to website.",
-]
-
 
 def load_messages():
     try:
@@ -205,8 +198,7 @@ def write_list(items):
         st.write(item)
 
 
-st.title("Loneliness Project")
-st.caption("Group: Carina, Alexis, RJ, Tian")
+st.title("Owners Project")
 st.write(
     "This website collects the group's current literature review materials, survey design, results summary, and a place for students to leave a message if they feel isolated or want connection."
 )
@@ -222,19 +214,18 @@ with st.sidebar:
 """
     )
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
         "Landing Page",
         "Literature Review",
         "Methods and Model",
         "Survey and Results",
-        "Project Notes",
         "Leave a Message",
     ]
 )
 
 with tab1:
-    st.write("Credit: Carina, Alexis, RJ, Tian")
+    st.write("Credit: Carina, Alexis, RJ")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Survey Questions", 43)
     c2.metric("Analyzed Sample", 30)
@@ -277,7 +268,7 @@ with tab2:
     st.write(PURPOSE_TEXT)
 
 with tab3:
-    st.write("Credit: RJ, Alexis, Tian")
+    st.write("Credit: Carina, Alexis, RJ")
 
     st.header("Methods")
     st.write(METHODS_TEXT)
@@ -306,7 +297,7 @@ with tab3:
     st.write(LIMITATIONS_TEXT)
 
 with tab4:
-    st.write("Credit: Carina, Alexis, RJ, Tian")
+    st.write("Credit: Carina, Alexis, RJ")
 
     a, b, c, d = st.columns(4)
     a.metric("Low Sociality", 3)
@@ -337,25 +328,6 @@ with tab4:
         st.markdown(f"- {question}")
 
 with tab5:
-    st.write("Credit: Entire Group")
-
-    st.header("Project Direction")
-    st.write(
-        "The project is developing a research website that combines a literature review, survey method, results summary, and possible real-world applications for reducing loneliness in college environments."
-    )
-
-    st.header("Team Roles and Current Responsibilities")
-    for note in TEAM_NOTES:
-        st.markdown(f"- {note}")
-
-    st.header("Current Website Priorities")
-    st.markdown("- Keep citations and structure consistent.")
-    st.markdown("- Emphasize what problem the survey is solving.")
-    st.markdown("- Show how the project could help college students practically.")
-    st.markdown("- Preserve the messaging feature while expanding the research content.")
-
-with tab6:
-    st.write("Credit: Carina, Alexis, RJ")
     st.header("Leave a Message")
     st.write("If someone feels isolated, they can leave a short message below.")
 
