@@ -291,12 +291,13 @@ with st.sidebar:
     for filename in sorted(materials):
         st.write(f"- {filename}")
 
-tab1, tab2, tab3, tab4, tab5= st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "Landing Page",
         "Literature Review",
         "Methods and Model",
         "Survey and Results",
+        "Project Notes",
         "Leave a Message",
     ]
 )
