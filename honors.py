@@ -5,7 +5,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="Loneliness Project", layout="wide")
+st.set_page_config(page_title="Honors Project", layout="wide")
 
 BASE_DIR = Path(__file__).resolve().parent
 MESSAGE_FILE = BASE_DIR / "messages.json"
