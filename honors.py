@@ -1,4 +1,4 @@
-# from datetime import datetime
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import requests
@@ -168,9 +168,9 @@ def load_messages():
         )
         if response.status_code == 200:
             return response.json()
-        return []
+        return 
     except Exception:
-        return []
+        return 
 
 
 def save_message(name, contact, message):
@@ -215,10 +215,10 @@ with st.sidebar:
     st.header("Project Snapshot")
     st.markdown(
         """
-**Pages:** 6  
-**Survey length:** 43 questions  
-**Analyzed sample:** 30 students  
-**Engineered groups:** 5
+Pages: 6
+Survey length: 43 questions
+Analyzed sample: 30 students
+Engineered groups: 5
 """
     )
 
@@ -277,7 +277,7 @@ with tab2:
     st.write(PURPOSE_TEXT)
 
 with tab3:
-    st.write("Credit: Carina, Alexis, RJ”)
+    st.write("Credit: Carina, Alexis, RJ")
 
     st.header("Methods")
     st.write(METHODS_TEXT)
@@ -336,7 +336,9 @@ with tab4:
     for question in FINANCIAL_QUESTIONS:
         st.markdown(f"- {question}")
 
+
 with tab5:
+    st.write("Credit: Carina, Alexis, RJ")
     st.header("Leave a Message")
     st.write("If someone feels isolated, they can leave a short message below.")
 
@@ -362,12 +364,10 @@ with tab5:
     if messages:
         for msg in messages:
             st.markdown("---")
-            st.write(f"**Name:** {msg.get('name', '')}")
+            st.write(f"Name: {msg.get('name', '')}")
             if msg.get("contact", ""):
-                st.write(f"**Contact:** {msg.get('contact', '')}")
-            st.write(f"**Message:** {msg.get('message', '')}")
-            st.write(f"**Time:** {format_time(msg.get('created_at', ''))}")
+                st.write(f"Contact: {msg.get('contact', '')}")
+            st.write(f"Message: {msg.get('message', '')}")
+            st.write(f"Time: {format_time(msg.get('created_at', ''))}")
     else:
         st.info("No messages yet.")
-
-#1  情景#
