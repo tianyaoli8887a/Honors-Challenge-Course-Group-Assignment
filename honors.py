@@ -3,6 +3,7 @@ import statistics
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 st.set_page_config(page_title="Loneliness Project", layout="wide")
@@ -79,13 +80,15 @@ def rows_to_records(rows, limit=None):
 
 def render_paragraphs(paragraphs):
     for paragraph in paragraphs:
-        if paragraph.strip():
-            st.write(paragraph.strip())
+        text = paragraph.strip()
+        if text:
+            st.write(text)
 
 
 def render_bullets(items):
     for item in items:
-        st.markdown(f"- {item}")
+        if str(item).strip():
+            st.markdown(f"- {item}")
 
 
 def safe_get(items, index, default=""):
@@ -145,10 +148,10 @@ def compute_sociality_stats(materials):
     for group_id, members in sorted(group_members.items()):
         group_average_records.append(
             {
-                "Group": group_id,
-                "Average Raw Score": round(statistics.mean(members), 1),
-                "Average Normalized S": round(statistics.mean(members) / 66, 3),
-                "Members": len(members),
+                "Group": str(group_id),
+                "Average Raw Score": f"{statistics.mean(members):.1f}",
+                "Average Normalized S": f"{statistics.mean(members) / 66:.3f}",
+                "Members": str(len(members)),
             }
         )
 
@@ -174,3 +177,361 @@ def extract_survey_question_sections(materials):
     )
     sections = {"Reciprocation": [], "Endurance": [], "Proactivity": []}
     current = None
+    for paragraph in paragraphs:
+        if paragraph in sections:
+            current = paragraph
+            continue
+        if paragraph == "Scoring and Aggregation":
+            current = None
+            continue
+        if current and paragraph and not paragraph.startswith("Measuring "):
+            sections[current].append(paragraph)
+    return sections
+
+
+materials = load_materials()
+stats = compute_sociality_stats(materials)
+survey_sections = extract_survey_question_sections(materials)
+link_doc = get_doc_paragraphs(materials, "Link between fin + LN for website.docx")
+abstract_paragraphs = get_doc_paragraphs(materials, "Abstract.docx")
+research_notes = get_doc_paragraphs(materials, "HNRS research_.docx")
+modeling_notes = get_doc_paragraphs(
+    materials,
+    "Copy of Modeling Sociality and Group Dynamics.docx",
+)
+brainstorming_notes = get_doc_paragraphs(materials, "hypothesis brainstorming.docx")
+financial_questions = get_doc_paragraphs(
+    materials,
+    "Additional financial health questions.docx",
+)
+neurobio_notes = get_doc_paragraphs(
+    materials,
+    "Literature review - Neurobiology part.docx",
+)
+virtue_formula_notes = get_doc_paragraphs(materials, "Virtue formula.docx")
+analysis_pages = get_pdf_pages(materials, "Sociality Survey Results Analysis.pdf")
+survey_explanation = get_doc_paragraphs(
+    materials,
+    "Sociality Survey Questions and Explanation.docx",
+)
+
+balanced_records = rows_to_records(
+    get_sheet_rows(
+        materials,
+        "Balanced sociality scores.xlsx",
+        "Balanced_Sorting_Sheet",
+    )
+)
+normalized_records = rows_to_records(
+    get_sheet_rows(
+        materials,
+        "Normalized sociality scores.xlsx",
+        "Normalized_Sociality_Scores",
+    )
+)
+
+response_preview_records = []
+for record in rows_to_records(
+    get_sheet_rows(
+        materials,
+        "Sociality Survey (Responses).xlsx",
+        "Form Responses 1",
+    ),
+    limit=8,
+):
+    response_preview_records.append(
+        {
+            "Major/Minor": str(record.get("Major/Minor", "")),
+            "Financial Situation": str(
+                record.get(
+                    "How would you describe your current financial situation?",
+                    "",
+                )
+            ),
+            "Expense Worry": str(
+                record.get(
+                    "How often do you worry about having enough money to pay for your basic monthly expenses (rent, food, bills)?",
+                    "",
+                )
+            ),
+            "Next Semester Confidence": str(
+                record.get(
+                    "How confident are you that you can pay for next semester’s educational expenses (tuition, fees, books)?",
+                    "",
+                )
+            ),
+            "Finances Affect Daily Wellbeing": str(
+                record.get(
+                    "Because of my money situation, I feel stress that affects my daily life and well being.",
+                    "",
+                )
+            ),
+            "Finances Affect Connection": str(
+                record.get(
+                    "My finances prevent me from maintaining connections to friends and potential friends.",
+                    "",
+                )
+            ),
+        }
+    )
+
+result_summary = [
+    {"Metric": "Analyzed sample", "Value": str(stats["sample_size"])},
+    {
+        "Metric": "Mean raw score",
+        "Value": "" if stats["mean_score"] is None else str(stats["mean_score"]),
+    },
+    {
+        "Metric": "Median raw score",
+        "Value": "" if stats["median_score"] is None else str(stats["median_score"]),
+    },
+    {
+        "Metric": "Raw score range",
+        "Value": ""
+        if stats["min_score"] is None or stats["max_score"] is None
+        else f"{stats['min_score']} to {stats['max_score']}",
+    },
+    {"Metric": "High sociality", "Value": str(stats["category_counts"]["High"])},
+    {
+        "Metric": "Moderate sociality",
+        "Value": str(stats["category_counts"]["Moderate"]),
+    },
+    {"Metric": "Low sociality", "Value": str(stats["category_counts"]["Low"])},
+]
+
+st.title("Loneliness Project")
+st.caption("Group: Carina, Alexis, RJ")
+st.write(
+    "This website collects the group's current literature review materials, survey design, early data analysis, and a place for students to leave a message if they feel isolated or want connection."
+)
+
+if not materials:
+    st.warning(
+        "The extracted project materials file could not be loaded. The app will still run, but the attachment-based sections may appear empty."
+    )
+
+with st.sidebar:
+    st.header("Project Snapshot")
+    st.markdown(
+        f"""
+**Pages:** 5  
+**Processed files:** {len(materials)}  
+**Analyzed sample:** {stats["sample_size"]} students  
+**Raw response workbook:** {stats["raw_response_count"]} submissions  
+**Engineered groups:** {len(stats["group_averages"])}
+"""
+    )
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    [
+        "Landing Page",
+        "Literature Review",
+        "Methods and Model",
+        "Survey and Results",
+        "Leave a Message",
+    ]
+)
+
+with tab1:
+    st.write("Credit: Carina, Alexis, RJ")
+
+    metric1, metric2, metric3, metric4 = st.columns(4)
+    metric1.metric("Analyzed Sample", stats["sample_size"])
+    metric2.metric("Mean Sociality Score", stats["mean_score"])
+    metric3.metric("Median Score", stats["median_score"])
+    metric4.metric("Average Normalized S", stats["mean_normalized_s"])
+
+    st.header("Abstract")
+    render_paragraphs(abstract_paragraphs)
+
+    st.header("Loneliness Epidemic (Broad)")
+    st.write(safe_get(link_doc, 3))
+
+    st.header("Loneliness in College Students (Broad)")
+    st.write(safe_get(link_doc, 5))
+
+    st.header("Loneliness at AU")
+    st.write(safe_get(link_doc, 7))
+
+    st.header("Why This Matters")
+    st.write(
+        "This project argues that loneliness is not just an individual emotion. It is a group-level outcome shaped by how students connect, how resilient they are after difficult interactions, and how environmental pressures such as financial strain affect daily life."
+    )
+    st.write(
+        "Rather than only describing the problem, the project also proposes a practical use case: using sociality-informed grouping to improve dorm assignments, class groups, and student support systems."
+    )
+
+    st.subheader("Current Hypothesis Direction")
+    render_bullets(brainstorming_notes)
+
+with tab2:
+    st.write("Credit: Carina, Alexis, RJ")
+
+    st.header("Biological Effects of Loneliness on College Students")
+    for index in range(9, 14):
+        if index < len(link_doc):
+            st.write(link_doc[index])
+
+    if HPA_IMAGE.exists():
+        st.image(
+            str(HPA_IMAGE),
+            caption="HPA axis diagram extracted from the project photo materials.",
+            width="stretch",
+        )
+        st.caption(
+            "The image is placed here because it directly supports the neurobiology section and does not need to function as a text background."
+        )
+
+    st.header("Financial Health and Loneliness")
+    for index in range(15, 17):
+        if index < len(link_doc):
+            st.write(link_doc[index])
+
+    st.header("What Previous Research Shows")
+    st.write(safe_get(link_doc, 18))
+
+    st.header("Purpose of Our Study")
+    st.write(safe_get(link_doc, 20))
+
+    with st.expander("Detailed Neurobiology Literature Notes"):
+        render_paragraphs(neurobio_notes)
+
+    with st.expander("Annotated Bibliography and Financial-Loneliness Source Notes"):
+        render_paragraphs(research_notes)
+
+with tab3:
+    st.write("Credit: Carina, Alexis, RJ")
+
+    st.header("Methods")
+    st.write(
+        "The study combines a 43-question survey, score normalization, and a group-dynamics model to understand how connection patterns may help explain loneliness among college students."
+    )
+    render_paragraphs(modeling_notes[:5])
+
+    st.header("The Three Sociality Traits")
+    trait_cols = st.columns(3)
+    with trait_cols[0]:
+        st.subheader("Reciprocation")
+        st.write(safe_get(survey_explanation, 1))
+    with trait_cols[1]:
+        st.subheader("Endurance")
+        st.write(safe_get(survey_explanation, 2))
+    with trait_cols[2]:
+        st.subheader("Proactivity")
+        st.write(safe_get(survey_explanation, 3))
+
+    st.header("Mathematical Model")
+    st.latex(
+        r"\frac{dS}{dt} = S(1-S)\left[(\beta_0 + \delta_-) \sigma(S - \theta_{iso}) - \delta_-\right]"
+    )
+    st.write(
+        "The website materials explain the model as a way to estimate whether a group's aggregate sociality trends upward toward stronger connection or downward toward isolation."
+    )
+    render_paragraphs(link_doc[29:38])
+
+    st.subheader("Virtue / Sociality Formula Notes")
+    render_paragraphs(virtue_formula_notes)
+
+    st.header("Scoring Interpretation")
+    scoring_points = survey_explanation[49:57]
+    render_paragraphs(scoring_points)
+
+    st.header("Significance")
+    render_paragraphs(link_doc[40:43])
+
+    st.header("Limitations and Future Research")
+    render_paragraphs(link_doc[44:45])
+    render_paragraphs(modeling_notes[11:])
+
+with tab4:
+    st.write("Credit: Carina, Alexis, RJ")
+
+    counts = stats["category_counts"]
+    stat1, stat2, stat3, stat4 = st.columns(4)
+    stat1.metric("Low Sociality", counts["Low"])
+    stat2.metric("Moderate Sociality", counts["Moderate"])
+    stat3.metric("High Sociality", counts["High"])
+    stat4.metric("Raw Workbook Entries", stats["raw_response_count"])
+
+    st.header("Results Summary")
+    st.table(pd.DataFrame(result_summary))
+
+    for page in analysis_pages:
+        st.write(page)
+
+    st.info(
+        "The current PDF analysis appears to summarize a cleaned sample of 30 students, while the raw response workbook contains additional submissions. Both are shown here so the website reflects the current project state honestly."
+    )
+
+    st.header("Engineered Group Stability")
+    st.dataframe(pd.DataFrame(stats["group_averages"]), width="stretch", hide_index=True)
+
+    st.subheader("Balanced Sociality Group Assignments")
+    st.dataframe(pd.DataFrame(balanced_records), width="stretch", height=500)
+
+    st.subheader("Normalized Sociality Scores")
+    st.dataframe(pd.DataFrame(normalized_records), width="stretch", height=500)
+
+    st.header("Survey Design")
+    st.write(
+        "The survey measures three sociality dimensions and then layers in financial-health questions to test whether social behavior patterns and material conditions relate to loneliness."
+    )
+
+    question_tab1, question_tab2, question_tab3 = st.tabs(
+        ["Reciprocation", "Endurance", "Proactivity"]
+    )
+    with question_tab1:
+        render_bullets(survey_sections["Reciprocation"])
+    with question_tab2:
+        render_bullets(survey_sections["Endurance"])
+    with question_tab3:
+        render_bullets(survey_sections["Proactivity"])
+
+    st.subheader("Additional Financial Health Questions")
+    render_bullets(financial_questions)
+
+    with st.expander("Anonymized Preview of Raw Survey Responses"):
+        st.write(
+            "Direct identifiers such as names and email addresses are intentionally excluded here. The preview keeps the substantive response patterns while avoiding unnecessary exposure of private information."
+        )
+        st.dataframe(pd.DataFrame(response_preview_records), width="stretch")
+
+with tab5:
+    st.header("Leave a Message")
+    st.write("If someone feels isolated, they can leave a short message below.")
+
+    with st.form("message_form", clear_on_submit=True):
+        name = st.text_input("Your name or username")
+        contact = st.text_input("Your contact (optional)")
+        message = st.text_area("Your message")
+        submitted = st.form_submit_button("Post Message")
+
+        if submitted:
+            if message.strip():
+                messages = load_messages()
+                messages.append(
+                    {
+                        "name": name.strip() if name.strip() else "Anonymous",
+                        "contact": contact.strip(),
+                        "message": message.strip(),
+                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
+                save_messages(messages)
+                st.success("Your message has been posted.")
+            else:
+                st.warning("Please enter a message before posting.")
+
+    st.subheader("Recent Messages")
+    messages = load_messages()
+
+    if messages:
+        for msg in reversed(messages):
+            st.markdown("---")
+            st.write(f"**Name:** {msg.get('name', '')}")
+            if msg.get("contact", ""):
+                st.write(f"**Contact:** {msg.get('contact', '')}")
+            st.write(f"**Message:** {msg.get('message', '')}")
+            st.write(f"**Time:** {msg.get('time', '')}")
+    else:
+        st.info("No messages yet.")
