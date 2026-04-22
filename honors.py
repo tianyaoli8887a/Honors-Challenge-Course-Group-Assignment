@@ -303,7 +303,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 )
 
 with tab1:
-    st.write("Credit: Carina, Alexis, RJ, Tian")
+    st.write("Credit: Carina, Alexis, RJ")
 
     metric1, metric2, metric3, metric4 = st.columns(4)
     metric1.metric("Analyzed Sample", stats["sample_size"])
@@ -370,7 +370,7 @@ with tab2:
         render_paragraphs(research_notes)
 
 with tab3:
-    st.write("Credit: RJ, Alexis, Tian")
+    st.write("Credit: Carina, Alexis, RJ")
 
     st.header("Methods")
     st.write(
@@ -412,7 +412,7 @@ with tab3:
     render_paragraphs(modeling_notes[11:])
 
 with tab4:
-    st.write("Credit: Carina, Alexis, RJ, Tian")
+    st.write("Credit: Carina, Alexis, RJ")
 
     counts = stats["category_counts"]
     stat1, stat2, stat3, stat4 = st.columns(4)
@@ -462,39 +462,8 @@ with tab4:
         )
         st.dataframe(response_preview_records, use_container_width=True)
 
+
 with tab5:
-    st.write("Credit: Entire Group")
-
-    st.header("Timeline and Working Plan")
-    render_paragraphs(timeline_notes[:24])
-
-    st.header("Team Roles and Current Responsibilities")
-    render_paragraphs(timeline_notes[24:])
-
-    st.header("Website Integration Notes from the Project Documents")
-    integration_notes = [
-        note
-        for note in link_doc
-        if note.startswith("(") or note.startswith("Get group picture")
-    ]
-    render_bullets(integration_notes)
-
-    st.header("Presentation Status")
-    st.write(
-        "The attached PowerPoint file currently appears to be a placeholder template rather than a finished honors presentation. Because of that, this website integrates the substantive research materials instead of trying to mirror unfinished slide content."
-    )
-
-    with st.expander("PowerPoint Text Extract"):
-        slides = materials.get("Honors presentation.pptx", {}).get("slides", [])
-        for slide in slides:
-            st.write(f"Slide {slide['slide']}: {' | '.join(slide['texts'])}")
-
-    with st.expander("Empty or Minimal Files Not Fully Displayed"):
-        st.write(
-            "Sociality Scores.docx appears empty, and the PowerPoint mostly contains template text. Those files were still reviewed, but there was not much substantive content to place on the site."
-        )
-
-with tab6:
     st.header("Leave a Message")
     st.write("If someone feels isolated, they can leave a short message below.")
 
