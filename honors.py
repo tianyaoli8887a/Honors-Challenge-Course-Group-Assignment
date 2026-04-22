@@ -207,7 +207,7 @@ with st.sidebar:
     st.header("Project Snapshot")
     st.markdown(
         """
-**Pages:** 6  
+**Pages:** 5  
 **Survey length:** 43 questions  
 **Analyzed sample:** 30 students  
 **Engineered groups:** 5
