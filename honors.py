@@ -1,10 +1,10 @@
-from datetime import datetime
+# from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import requests
 import streamlit as st
 
-st.set_page_config(page_title="Owners Project", layout="wide")
+st.set_page_config(page_title="Loneliness Project", layout="wide")
 
 SUPABASE_URL = "https://mkdvrtnedxlwwgsdittp.supabase.co"
 SUPABASE_KEY = "sb_publishable_3JxtHu0cEXGphAvOVAoa-A_Ho9lG4jF"
@@ -151,6 +151,13 @@ GROUP_SUMMARY = [
     {"Group": 5, "Average Raw Score": 44.2, "Average Normalized S": 0.670, "Members": 6},
 ]
 
+TEAM_NOTES = [
+    "Carina: add significance information and find pictures.",
+    "RJ: finish methods section and add significance and limitations information.",
+    "Alexis: add significance and limitations information.",
+    "Tianyao: transfer new text onto website and add colors and pictures to website.",
+]
+
 
 def load_messages():
     try:
@@ -198,7 +205,8 @@ def write_list(items):
         st.write(item)
 
 
-st.title("Owners Project")
+st.title("Loneliness Project")
+st.caption("Group: Carina, Alexis, RJ, Tian")
 st.write(
     "This website collects the group's current literature review materials, survey design, results summary, and a place for students to leave a message if they feel isolated or want connection."
 )
@@ -207,19 +215,20 @@ with st.sidebar:
     st.header("Project Snapshot")
     st.markdown(
         """
-**Pages:** 5  
+**Pages:** 6  
 **Survey length:** 43 questions  
 **Analyzed sample:** 30 students  
 **Engineered groups:** 5
 """
     )
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "Landing Page",
         "Literature Review",
         "Methods and Model",
         "Survey and Results",
+        "Project Notes",
         "Leave a Message",
     ]
 )
@@ -268,7 +277,7 @@ with tab2:
     st.write(PURPOSE_TEXT)
 
 with tab3:
-    st.write("Credit: Carina, Alexis, RJ")
+    st.write("Credit: Carina, Alexis, RJ”)
 
     st.header("Methods")
     st.write(METHODS_TEXT)
@@ -360,3 +369,5 @@ with tab5:
             st.write(f"**Time:** {format_time(msg.get('created_at', ''))}")
     else:
         st.info("No messages yet.")
+
+#1  情景#
