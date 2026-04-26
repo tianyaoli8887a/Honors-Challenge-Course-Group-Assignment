@@ -360,15 +360,6 @@ def score_class_group_match(new_record, candidate):
     if new_record.get("work_style") == candidate.get("work_style"):
         score += 2
     score += overlap_count(new_record.get("availability"), candidate.get("availability")) * 2
-
-    # A class group benefits from a mix of initiators, stabilizers, and reciprocators.
-    proactivity_mix = abs(
-        safe_int(new_record.get("proactivity")) - safe_int(candidate.get("proactivity"))
-    )
-    endurance_mix = abs(
-        safe_int(new_record.get("endurance")) - safe_int(candidate.get("endurance"))
-    )
-    score += min(3, proactivity_mix + endurance_mix)
     return score
 
 
@@ -464,7 +455,7 @@ def get_micro_actions(mood, obstacle):
     if obstacle == "I do not know where to go":
         return [
             "Try a small-group setting before a large event.",
-            "Use Event Connector to name one kind of event you would actually attend.",
+            "Use Event Buddy to name one kind of event you would actually attend.",
             "Choose an event where there is a built-in activity, not only open-ended mingling.",
         ]
     return [
@@ -674,11 +665,11 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
         "Literature Review",
         "Methods and Model",
         "Survey and Results",
-        "Connection",
-        "Check-in",
-        "Class Group Builder",
-        "Event Connector",
         "Leave a Message",
+        "Connection",
+        "Social Pulse",
+        "Class Groups",
+        "Event Buddy",
     ]
 )
 
@@ -856,7 +847,46 @@ with tab4:
     render_paragraphs(SIGNIFICANCE_TEXT)
 
 with tab5:
-    st.write(TAB_CREDIT)
+    st.header("Leave a Message")
+    st.write("If someone feels isolated, they can leave a short message below.")
+
+    with st.form("message_form", clear_on_submit=True):
+        name = st.text_input("Your name or username")
+        contact = st.text_input("Your contact (optional)")
+        message = st.text_area("Your message")
+        submitted = st.form_submit_button("Post Message")
+
+        if submitted:
+            if message.strip():
+                messages = load_messages()
+                messages.append(
+                    {
+                        "name": name.strip() if name.strip() else "Anonymous",
+                        "contact": contact.strip(),
+                        "message": message.strip(),
+                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
+                save_messages(messages)
+                st.success("Your message has been posted.")
+            else:
+                st.warning("Please enter a message before posting.")
+
+    st.subheader("Recent Messages")
+    messages = load_messages()
+
+    if messages:
+        for msg in reversed(messages):
+            st.markdown("---")
+            st.write(f"**Name:** {msg.get('name', '')}")
+            if msg.get("contact", ""):
+                st.write(f"**Contact:** {msg.get('contact', '')}")
+            st.write(f"**Message:** {msg.get('message', '')}")
+            st.write(f"**Time:** {msg.get('time', '')}")
+    else:
+        st.info("No messages yet.")
+
+with tab6:
     st.header("Connection")
     st.write(
         "This tab turns a feeling into a next step. Instead of only leaving a message, a student can ask for connection and the site will look for up to 3 compatible requests."
@@ -995,11 +1025,10 @@ with tab5:
     else:
         st.info("No connection requests yet.")
 
-with tab6:
-    st.write(TAB_CREDIT)
-    st.header("Check-in")
+with tab7:
+    st.header("Social Pulse")
     st.write(
-        "This tab is an early-warning and action tool. It does not diagnose anyone; it helps students name their current state and immediately get a next step."
+        "This is a quick way for a student to name how they are doing and get one concrete next step, without turning it into a clinical or formal process."
     )
 
     checkin_records = load_json_list(CHECKIN_FILE)
@@ -1033,11 +1062,7 @@ with tab6:
             ],
             key="checkin_obstacle",
         )
-        wants_connection = st.checkbox(
-            "I would like the site to recommend using Connection.",
-            key="checkin_wants_connection",
-        )
-        checkin_submitted = st.form_submit_button("Submit Check-in")
+        checkin_submitted = st.form_submit_button("Get a Next Step")
 
         if checkin_submitted:
             new_checkin = {
@@ -1045,24 +1070,23 @@ with tab6:
                 "mood": mood,
                 "loneliness_days": loneliness_days,
                 "obstacle": obstacle,
-                "wants_connection": wants_connection,
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
             checkin_records.append(new_checkin)
             save_json_list(CHECKIN_FILE, checkin_records)
-            st.success("Your check-in has been saved.")
+            st.success("Your pulse entry has been saved.")
 
             if mood in ["Lonely", "Disconnected"] or loneliness_days >= 2:
                 st.warning(
                     "This pattern suggests the student would benefit from a concrete connection step today."
                 )
-            if wants_connection or mood in ["Lonely", "Disconnected"]:
+            if mood in ["Lonely", "Disconnected"]:
                 st.info("Recommended next step: open the Connection tab and submit a request.")
 
-            st.subheader("Micro-action suggestions")
+            st.subheader("Small next steps")
             render_bullets(get_micro_actions(mood, obstacle))
 
-    st.subheader("Check-in Snapshot")
+    st.subheader("Recent Pulse")
     if checkin_records:
         recent_checkins = checkin_records[-10:]
         lonely_count = sum(
@@ -1071,20 +1095,13 @@ with tab6:
             if record.get("mood") in ["Lonely", "Disconnected"]
             or safe_int(record.get("loneliness_days"), 0) >= 2
         )
-        st.metric("Recent higher-risk check-ins", lonely_count)
-        st.caption("This count uses only the most recent 10 check-ins.")
+        st.metric("Recent students who may need connection", lonely_count)
+        st.caption("This count uses only the most recent 10 pulse entries.")
     else:
-        st.info("No check-ins yet.")
+        st.info("No pulse entries yet.")
 
-with tab7:
-    st.write(TAB_CREDIT)
-    st.header("Class Group Builder")
-    st.write(
-        "This tab demonstrates the project's strongest practical application: using sociality traits to form class discussion groups or project teams."
-    )
-    st.caption(
-        "No login is required. Students submit a course/topic request, and the site suggests compatible groupmates from previous submissions."
-    )
+with tab8:
+    st.header("Class Groups")
 
     class_group_records = load_json_list(CLASS_GROUP_FILE)
 
@@ -1128,27 +1145,6 @@ with tab7:
             ["Today", "This week", "Weekends", "Evenings", "Between classes", "Online"],
             key="group_availability",
         )
-        group_reciprocation = st.slider(
-            "Reciprocation",
-            min_value=1,
-            max_value=5,
-            value=3,
-            key="group_reciprocation",
-        )
-        group_endurance = st.slider(
-            "Endurance",
-            min_value=1,
-            max_value=5,
-            value=3,
-            key="group_endurance",
-        )
-        group_proactivity = st.slider(
-            "Proactivity",
-            min_value=1,
-            max_value=5,
-            value=3,
-            key="group_proactivity",
-        )
         group_note = st.text_area(
             "Short note, optional",
             placeholder="Example: I want a low-pressure group to talk through the presentation.",
@@ -1164,9 +1160,6 @@ with tab7:
                 "topic": topic,
                 "work_style": work_style,
                 "availability": group_availability,
-                "reciprocation": group_reciprocation,
-                "endurance": group_endurance,
-                "proactivity": group_proactivity,
                 "note": group_note.strip(),
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
@@ -1198,11 +1191,10 @@ with tab7:
     else:
         st.info("No class group requests yet.")
 
-with tab8:
-    st.write(TAB_CREDIT)
-    st.header("Event Connector")
+with tab9:
+    st.header("Event Buddy")
     st.write(
-        "This tab is a simple event optimizer. It does not need live campus event data; instead, students name the type of event they would actually attend, and the site connects people with similar event preferences."
+        "Students do not always need a bigger event calendar. Sometimes they need one person who wants to go to the same kind of thing."
     )
 
     event_records = load_json_list(EVENT_FILE)
@@ -1252,7 +1244,7 @@ with tab8:
             placeholder="Example: I want a low-pressure event where conversation has a built-in topic.",
             key="event_note",
         )
-        event_submitted = st.form_submit_button("Find Event Connections")
+        event_submitted = st.form_submit_button("Find an Event Buddy")
 
         if event_submitted:
             new_event_request = {
@@ -1298,43 +1290,3 @@ with tab8:
             render_event_match(request, show_contact=False)
     else:
         st.info("No event interests yet.")
-
-with tab9:
-    st.header("Leave a Message")
-    st.write("If someone feels isolated, they can leave a short message below.")
-
-    with st.form("message_form", clear_on_submit=True):
-        name = st.text_input("Your name or username")
-        contact = st.text_input("Your contact (optional)")
-        message = st.text_area("Your message")
-        submitted = st.form_submit_button("Post Message")
-
-        if submitted:
-            if message.strip():
-                messages = load_messages()
-                messages.append(
-                    {
-                        "name": name.strip() if name.strip() else "Anonymous",
-                        "contact": contact.strip(),
-                        "message": message.strip(),
-                        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    }
-                )
-                save_messages(messages)
-                st.success("Your message has been posted.")
-            else:
-                st.warning("Please enter a message before posting.")
-
-    st.subheader("Recent Messages")
-    messages = load_messages()
-
-    if messages:
-        for msg in reversed(messages):
-            st.markdown("---")
-            st.write(f"**Name:** {msg.get('name', '')}")
-            if msg.get("contact", ""):
-                st.write(f"**Contact:** {msg.get('contact', '')}")
-            st.write(f"**Message:** {msg.get('message', '')}")
-            st.write(f"**Time:** {msg.get('time', '')}")
-    else:
-        st.info("No messages yet.")
