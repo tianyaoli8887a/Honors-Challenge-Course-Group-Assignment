@@ -889,7 +889,7 @@ with tab5:
 with tab6:
     st.header("Connection")
     st.write(
-        "Also, Instead of only leaving a message, a student can ask for connection"
+        "Also, Instead of only leaving a message, a student can ask for connection!"
     )
 
     connection_records = load_json_list(CONNECTION_FILE)
@@ -1099,6 +1099,7 @@ with tab7:
 
 with tab8:
     st.header("Class Groups")
+    st.write("Find someone wants to attend the same class here!")
 
     class_group_records = load_json_list(CLASS_GROUP_FILE)
 
