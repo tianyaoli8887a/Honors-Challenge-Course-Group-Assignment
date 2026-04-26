@@ -10,8 +10,11 @@ st.set_page_config(page_title="Honors Project", layout="wide")
 BASE_DIR = Path(__file__).resolve().parent
 MESSAGE_FILE = BASE_DIR / "messages.json"
 MATERIALS_FILE = BASE_DIR / "hnrs_materials_extracted.json"
-HPA_IMAGE = BASE_DIR / "assets" / "image1.png"
-GROUP_IMAGE = BASE_DIR / "assets" / "image2.jpg"
+
+MAIN_TITLE = "Honors Project"
+SUBTITLE = "Reducing Loneliness in College-Age Individuals Through Sociality Dynamics"
+GROUP_LINE = "Group: Carina Parsons, River Jordan Pugh, Alexis Mercado, TL"
+TAB_CREDIT = "Credit: Carina, Alexis, River Jordan"
 
 ABSTRACT = """
 Loneliness is an overlooked component within the lives of young adults attending college who often must manage multiple stressors in totality for the first time in their life. In addition to improving psychological well-being it can further the resilience of the students attending universities to have their loneliness not treated as an afterthought but a core component of their time at an institution. This study, centered around the overarching theme of loneliness among college students, places a particular focus on the student population at American University. In exploring loneliness within this community, through the lenses of social behavior patterns such as reciprocation, endurance, and proactivity, biological mechanisms including HPA axis dysregulation and pro-inflammatory immune activity that link chronic isolation to measurable physiological stress, financial health factors such as familial support and the burden of self-managed expenses during the transition from high school to college, and a mathematical model of group dynamics applied to survey responses from 43 questions that help to explicate why some students form meaningful connections while others experience persistent isolation while acknowledging the differing sociopolitical and economic contexts that these students come from, we aim to communicate a near-holistic portrait of loneliness as a group-level phenomenon shaped by the distribution of sociality traits rather than individual misfortune or financial strain alone. By using our study to show that loneliness is not an inherent part of the university experience and can be accounted for with attentive measures we aim to show how this can help reduce the health outcomes and financial risks associated with loneliness. Our method of analyzing sociality can be used to help form dorm assignments, class assignments, groups for projects and other means for university faculty to account for and aid their students.
@@ -169,33 +172,33 @@ DEFAULT_STATS = {
     "category_counts": {"High": 0, "Moderate": 27, "Low": 3},
     "group_averages": [
         {
-            "Project Title": "Group 1",
+            "Group Assignment": "Group 1",
             "Average Raw Score": "44.0",
-            "Average Normalized S": "0.667",
+            "Average Normalized Sociality": "0.667",
             "Members": "6",
         },
         {
-            "Project Title": "Group 2",
+            "Group Assignment": "Group 2",
             "Average Raw Score": "44.0",
-            "Average Normalized S": "0.667",
+            "Average Normalized Sociality": "0.667",
             "Members": "6",
         },
         {
-            "Project Title": "Group 3",
+            "Group Assignment": "Group 3",
             "Average Raw Score": "44.3",
-            "Average Normalized S": "0.671",
+            "Average Normalized Sociality": "0.671",
             "Members": "6",
         },
         {
-            "Project Title": "Group 4",
+            "Group Assignment": "Group 4",
             "Average Raw Score": "44.5",
-            "Average Normalized S": "0.674",
+            "Average Normalized Sociality": "0.674",
             "Members": "6",
         },
         {
-            "Project Title": "Group 5",
+            "Group Assignment": "Group 5",
             "Average Raw Score": "44.2",
-            "Average Normalized S": "0.670",
+            "Average Normalized Sociality": "0.670",
             "Members": "6",
         },
     ],
@@ -279,6 +282,26 @@ def render_bullets(items):
             st.markdown(f"- {text}")
 
 
+def extract_survey_question_sections(materials):
+    paragraphs = get_doc_paragraphs(
+        materials,
+        "Sociality Survey Questions and Explanation.docx",
+    )
+    sections = {"Reciprocation": [], "Endurance": [], "Proactivity": []}
+    current = None
+    for paragraph in paragraphs:
+        text = str(paragraph).strip()
+        if text in sections:
+            current = text
+            continue
+        if text == "Scoring and Aggregation":
+            current = None
+            continue
+        if current and text and not text.startswith("Measuring "):
+            sections[current].append(text)
+    return sections
+
+
 def compute_sociality_stats(materials):
     balanced_rows = get_sheet_rows(
         materials,
@@ -332,9 +355,9 @@ def compute_sociality_stats(materials):
     for group_id, members in sorted(group_members.items()):
         group_average_records.append(
             {
-                "Project Title": f"Group {group_id}",
+                "Group Assignment": f"Group {group_id}",
                 "Average Raw Score": f"{statistics.mean(members):.1f}",
-                "Average Normalized S": f"{statistics.mean(members) / 66:.3f}",
+                "Average Normalized Sociality": f"{statistics.mean(members) / 66:.3f}",
                 "Members": str(len(members)),
             }
         )
@@ -356,6 +379,7 @@ def compute_sociality_stats(materials):
 
 materials = load_materials()
 stats = compute_sociality_stats(materials)
+survey_sections = extract_survey_question_sections(materials)
 
 balanced_records = rows_to_records(
     get_sheet_rows(
@@ -371,10 +395,25 @@ normalized_records = rows_to_records(
         "Normalized_Sociality_Scores",
     )
 )
+copy_sorting_records = rows_to_records(
+    get_sheet_rows(
+        materials,
+        "Copy of Sociality Sorting Sheet.xlsx",
+        "Sheet1",
+    )
+)
 response_preview_records = rows_to_records(
     get_sheet_rows(
         materials,
         "Sociality Survey (Responses).xlsx",
+        "Form Responses 1",
+    ),
+    limit=8,
+)
+copy_response_preview_records = rows_to_records(
+    get_sheet_rows(
+        materials,
+        "Copy of Sociality Survey (Responses).xlsx",
         "Form Responses 1",
     ),
     limit=8,
@@ -387,11 +426,17 @@ timeline_notes = get_doc_paragraphs(
 )
 brainstorming_notes = get_doc_paragraphs(materials, "hypothesis brainstorming.docx")
 virtue_formula_notes = get_doc_paragraphs(materials, "Virtue formula.docx")
+survey_explanation = get_doc_paragraphs(
+    materials,
+    "Sociality Survey Questions and Explanation.docx",
+)
+
+scoring_notes = survey_explanation[49:57] if len(survey_explanation) >= 57 else []
 
 result_summary = [
     {"Metric": "Analyzed sample", "Value": str(stats["sample_size"])},
-    {"Metric": "Mean raw score", "Value": str(stats["mean_score"])},
-    {"Metric": "Median raw score", "Value": str(stats["median_score"])},
+    {"Metric": "Mean sociality score", "Value": str(stats["mean_score"])},
+    {"Metric": "Median sociality score", "Value": str(stats["median_score"])},
     {
         "Metric": "Raw score range",
         "Value": f"{stats['min_score']} to {stats['max_score']}",
@@ -410,20 +455,21 @@ result_summary = [
     },
 ]
 
-st.title("Honors Project")
-st.caption("Group: Carina, Alexis, RJ, Tian")
+st.title(MAIN_TITLE)
+st.subheader(SUBTITLE)
+st.caption(GROUP_LINE)
 st.write(
     "This website collects the group's current literature review materials, survey design, early data analysis, and a place for students to leave a message if they feel isolated or want connection."
 )
 
 with st.sidebar:
-    st.header("Project Snapshot")
+    st.header("Project Overview")
     st.markdown(
         f"""
 **Pages:** 5  
 **Survey length:** 43 questions  
 **Analyzed sample:** {stats["sample_size"]} students  
-**Engineered groups:** {len(stats["group_averages"])}
+**Group assignments:** {len(stats["group_averages"])}
 """
     )
     if materials:
@@ -441,19 +487,26 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
 )
 
 with tab1:
-    st.write("Credit: Carina, Alexis, RJ")
+    st.write(TAB_CREDIT)
 
     metric1, metric2, metric3, metric4 = st.columns(4)
     metric1.metric("Analyzed Sample", stats["sample_size"])
     metric2.metric("Mean Sociality Score", stats["mean_score"])
-    metric3.metric("Median Score", stats["median_score"])
-    metric4.metric("Average Normalized S", stats["mean_normalized_s"])
+    metric3.metric("Median Sociality Score", stats["median_score"])
+    metric4.metric("Average Normalized Sociality", stats["mean_normalized_s"])
+
+    caption1, caption2, caption3, caption4 = st.columns(4)
+    with caption1:
+        st.caption("Number of scored participants included in the dataset.")
+    with caption2:
+        st.caption("The average raw sociality score across participants.")
+    with caption3:
+        st.caption("The middle score in the distribution, with half above and half below.")
+    with caption4:
+        st.caption("In the model, S is the group's aggregate sociality value on a 0 to 1 scale.")
 
     st.header("Abstract")
     st.write(ABSTRACT)
-
-    if GROUP_IMAGE.exists():
-        st.image(str(GROUP_IMAGE), caption="Project image")
 
     st.header("Loneliness Epidemic")
     st.write(LANDING_BROAD)
@@ -477,16 +530,10 @@ with tab1:
         render_bullets(brainstorming_notes)
 
 with tab2:
-    st.write("Credit: Carina, Alexis, RJ")
+    st.write(TAB_CREDIT)
 
     st.header("Biological Effects of Loneliness on College Students")
     render_paragraphs(BIOLOGY_TEXT)
-
-    if HPA_IMAGE.exists():
-        st.image(
-            str(HPA_IMAGE),
-            caption="HPA axis-related image from the project materials",
-        )
 
     st.header("Financial Health and Loneliness")
     render_paragraphs(FINANCIAL_TEXT)
@@ -498,7 +545,7 @@ with tab2:
     st.write(PURPOSE_TEXT)
 
 with tab3:
-    st.write("Credit: Carina, Alexis, RJ")
+    st.write(TAB_CREDIT)
 
     st.header("Methods")
     render_paragraphs(METHODS_TEXT)
@@ -529,26 +576,33 @@ with tab3:
         st.subheader("Additional Formula Notes")
         render_paragraphs(virtue_formula_notes)
 
-    st.header("Significance")
-    render_paragraphs(SIGNIFICANCE_TEXT)
-
     st.header("Limitations and Future Research")
     st.write(LIMITATIONS_TEXT)
 
 with tab4:
-    st.write("Credit: Carina, Alexis, RJ")
+    st.write(TAB_CREDIT)
 
     counts = stats["category_counts"]
     stat1, stat2, stat3, stat4 = st.columns(4)
     stat1.metric("Low Sociality", counts["Low"])
     stat2.metric("Moderate Sociality", counts["Moderate"])
     stat3.metric("High Sociality", counts["High"])
-    stat4.metric("Groups", len(stats["group_averages"]))
+    stat4.metric("Group Assignments", len(stats["group_averages"]))
+
+    result_caption1, result_caption2, result_caption3, result_caption4 = st.columns(4)
+    with result_caption1:
+        st.caption("Scores below 34, indicating higher risk of isolation.")
+    with result_caption2:
+        st.caption("Scores from 34 to 54, the most common range in this sample.")
+    with result_caption3:
+        st.caption("Scores from 55 to 66, representing strong social stabilizers.")
+    with result_caption4:
+        st.caption("Number of balanced groups formed from the scored dataset.")
 
     st.header("Results Summary")
     st.table(result_summary)
 
-    st.header("Engineered Group Stability")
+    st.header("Group Assignment Summary")
     st.table(stats["group_averages"])
 
     if analysis_pages:
@@ -565,30 +619,45 @@ with tab4:
         ["Reciprocation", "Endurance", "Proactivity"]
     )
     with question_tab1:
-        render_bullets(SURVEY_QUESTIONS["Reciprocation"])
+        render_bullets(survey_sections["Reciprocation"] or SURVEY_QUESTIONS["Reciprocation"])
     with question_tab2:
-        render_bullets(SURVEY_QUESTIONS["Endurance"])
+        render_bullets(survey_sections["Endurance"] or SURVEY_QUESTIONS["Endurance"])
     with question_tab3:
-        render_bullets(SURVEY_QUESTIONS["Proactivity"])
+        render_bullets(survey_sections["Proactivity"] or SURVEY_QUESTIONS["Proactivity"])
 
     st.subheader("Additional Financial Health Questions")
     render_bullets(FINANCIAL_QUESTIONS)
 
     if balanced_records:
-        with st.expander("Balanced Sociality Group Assignments"):
+        with st.expander("Balanced Sociality Score Sheet"):
             st.dataframe(balanced_records, width="stretch", hide_index=True)
 
     if normalized_records:
-        with st.expander("Normalized Sociality Scores"):
+        with st.expander("Normalized Sociality Score Sheet"):
             st.dataframe(normalized_records, width="stretch", hide_index=True)
 
+    if copy_sorting_records:
+        with st.expander("Original Sociality Sorting Sheet"):
+            st.dataframe(copy_sorting_records, width="stretch", hide_index=True)
+
     if response_preview_records:
-        with st.expander("Anonymized Preview of Raw Survey Responses"):
+        with st.expander("Anonymized Preview of Survey Response Workbook"):
             st.dataframe(response_preview_records, width="stretch", hide_index=True)
+
+    if copy_response_preview_records:
+        with st.expander("Anonymized Preview of Copy Survey Workbook"):
+            st.dataframe(copy_response_preview_records, width="stretch", hide_index=True)
+
+    if scoring_notes:
+        st.header("Scoring Interpretation")
+        render_paragraphs(scoring_notes)
 
     if timeline_notes:
         with st.expander("Working Notes From Project Timeline"):
             render_paragraphs(timeline_notes)
+
+    st.header("Significance")
+    render_paragraphs(SIGNIFICANCE_TEXT)
 
 with tab5:
     st.header("Leave a Message")
