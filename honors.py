@@ -738,9 +738,6 @@ with tab5:
     st.write(
         "This tab turns a feeling into a next step. Instead of only leaving a message, a student can ask for connection and the site will look for 1 to 2 compatible requests."
     )
-    st.caption(
-        "MVP note: this version saves requests in a local JSON file, so it works for a class demo without extra cloud setup."
-    )
 
     connection_records = load_json_list(CONNECTION_FILE)
 
