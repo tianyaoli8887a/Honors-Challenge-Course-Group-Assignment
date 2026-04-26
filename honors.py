@@ -667,7 +667,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
         "Survey and Results",
         "Leave a Message",
         "Connection",
-        "Social Pulse",
+        "Suggestions",
         "Class Groups",
         "Event Buddy",
     ]
@@ -1026,10 +1026,7 @@ with tab6:
         st.info("No connection requests yet.")
 
 with tab7:
-    st.header("Social Pulse")
-    st.write(
-        "This is a quick way for a student to name how they are doing and get one concrete next step, without turning it into a clinical or formal process."
-    )
+    st.header("Suggestions")
 
     checkin_records = load_json_list(CHECKIN_FILE)
 
