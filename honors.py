@@ -11,6 +11,9 @@ BASE_DIR = Path(__file__).resolve().parent
 MESSAGE_FILE = BASE_DIR / "messages.json"
 MATERIALS_FILE = BASE_DIR / "hnrs_materials_extracted.json"
 CONNECTION_FILE = BASE_DIR / "connection_requests.json"
+CHECKIN_FILE = BASE_DIR / "checkins.json"
+CLASS_GROUP_FILE = BASE_DIR / "class_group_requests.json"
+EVENT_FILE = BASE_DIR / "event_requests.json"
 
 MAIN_TITLE = "Honors Project"
 SUBTITLE = "Reducing Loneliness in College-Age Individuals Through Sociality Dynamics"
@@ -302,6 +305,13 @@ def overlap_count(first_items, second_items):
     return len(set(first_items or []) & set(second_items or []))
 
 
+def safe_int(value, default=3):
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
 def same_person(first_record, second_record):
     first_contact = str(first_record.get("contact", "")).strip().lower()
     second_contact = str(second_record.get("contact", "")).strip().lower()
@@ -321,9 +331,61 @@ def score_connection_match(new_record, candidate):
         score += 4
     if new_record.get("connection_style") == candidate.get("connection_style"):
         score += 3
+    if new_record.get("conversation_preference") == candidate.get("conversation_preference"):
+        score += 3
+    if new_record.get("social_style") == candidate.get("social_style"):
+        score += 2
     score += overlap_count(new_record.get("availability"), candidate.get("availability")) * 2
+
+    energy_gap = abs(
+        safe_int(new_record.get("energy_today")) - safe_int(candidate.get("energy_today"))
+    )
+    score += max(0, 3 - energy_gap)
+
+    for trait in ["reciprocation", "endurance", "proactivity"]:
+        trait_gap = abs(safe_int(new_record.get(trait)) - safe_int(candidate.get(trait)))
+        score += max(0, 2 - trait_gap)
+
     if new_record.get("connection_goal") == "I feel isolated today":
         score += 1
+    return score
+
+
+def score_class_group_match(new_record, candidate):
+    score = 0
+    if new_record.get("course") and new_record.get("course") == candidate.get("course"):
+        score += 5
+    if new_record.get("topic") and new_record.get("topic") == candidate.get("topic"):
+        score += 4
+    if new_record.get("work_style") == candidate.get("work_style"):
+        score += 2
+    score += overlap_count(new_record.get("availability"), candidate.get("availability")) * 2
+
+    # A class group benefits from a mix of initiators, stabilizers, and reciprocators.
+    proactivity_mix = abs(
+        safe_int(new_record.get("proactivity")) - safe_int(candidate.get("proactivity"))
+    )
+    endurance_mix = abs(
+        safe_int(new_record.get("endurance")) - safe_int(candidate.get("endurance"))
+    )
+    score += min(3, proactivity_mix + endurance_mix)
+    return score
+
+
+def score_event_match(new_record, candidate):
+    score = 0
+    if new_record.get("event_type") == candidate.get("event_type"):
+        score += 5
+    if new_record.get("event_size") == candidate.get("event_size"):
+        score += 3
+    if new_record.get("topic") and new_record.get("topic") == candidate.get("topic"):
+        score += 3
+    score += overlap_count(new_record.get("availability"), candidate.get("availability")) * 2
+
+    energy_gap = abs(
+        safe_int(new_record.get("energy_today")) - safe_int(candidate.get("energy_today"))
+    )
+    score += max(0, 3 - energy_gap)
     return score
 
 
@@ -352,6 +414,64 @@ def render_connection_match(match_record, score=None, show_contact=False):
         st.write(f"Note: {match_record.get('note')}")
     if score is not None:
         st.caption(f"Match strength: {score}")
+
+
+def render_class_group_match(match_record, score=None, show_contact=False):
+    title = match_record.get("name", "Anonymous")
+    st.markdown(f"**{title}**")
+    if show_contact and match_record.get("contact"):
+        st.write(f"Contact: {match_record.get('contact')}")
+    st.write(f"Course or class: {match_record.get('course', '')}")
+    st.write(f"Discussion topic: {match_record.get('topic', '')}")
+    st.write(f"Work style: {match_record.get('work_style', '')}")
+    if match_record.get("availability"):
+        st.write(f"Availability: {', '.join(match_record.get('availability', []))}")
+    if match_record.get("note"):
+        st.write(f"Note: {match_record.get('note')}")
+    if score is not None:
+        st.caption(f"Group fit score: {score}")
+
+
+def render_event_match(match_record, score=None, show_contact=False):
+    title = match_record.get("name", "Anonymous")
+    st.markdown(f"**{title}**")
+    if show_contact and match_record.get("contact"):
+        st.write(f"Contact: {match_record.get('contact')}")
+    st.write(f"Event interest: {match_record.get('event_type', '')}")
+    st.write(f"Preferred size: {match_record.get('event_size', '')}")
+    st.write(f"Topic or activity: {match_record.get('topic', '')}")
+    if match_record.get("availability"):
+        st.write(f"Availability: {', '.join(match_record.get('availability', []))}")
+    if match_record.get("note"):
+        st.write(f"Note: {match_record.get('note')}")
+    if score is not None:
+        st.caption(f"Event fit score: {score}")
+
+
+def get_micro_actions(mood, obstacle):
+    if mood == "Lonely":
+        return [
+            "Submit a Connection request and choose the lowest-pressure option, such as Text first or Online chat.",
+            "Message one person with a concrete invitation instead of a vague hello.",
+            "Choose one small public place to be around people for 20 minutes, even if you do not start a conversation.",
+        ]
+    if obstacle == "I do not know what to say":
+        return [
+            "Use this starter: 'Hey, I am trying to meet more people. Want to grab coffee or study together this week?'",
+            "Ask one specific question about class, campus life, or an upcoming assignment.",
+            "Pick a shared context first: class, dorm, club, food, or an event.",
+        ]
+    if obstacle == "I do not know where to go":
+        return [
+            "Try a small-group setting before a large event.",
+            "Use Event Connector to name one kind of event you would actually attend.",
+            "Choose an event where there is a built-in activity, not only open-ended mingling.",
+        ]
+    return [
+        "Make the next step concrete: one person, one message, one time window.",
+        "Reduce pressure by choosing a short first interaction, such as 20 minutes.",
+        "If you feel stuck, use the Connection tab rather than waiting for motivation.",
+    ]
 
 
 def extract_survey_question_sections(materials):
@@ -538,7 +658,7 @@ with st.sidebar:
     st.header("Project Overview")
     st.markdown(
         f"""
-**Pages:** 6  
+**Pages:** 9  
 **Survey length:** 43 questions  
 **Analyzed sample:** {stats["sample_size"]} students  
 **Group assignments:** {len(stats["group_averages"])}
@@ -548,13 +668,16 @@ with st.sidebar:
         st.markdown("---")
         st.markdown(f"**Loaded source files:** {len(materials)}")
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
     [
         "Landing Page",
         "Literature Review",
         "Methods and Model",
         "Survey and Results",
         "Connection",
+        "Check-in",
+        "Class Group Builder",
+        "Event Connector",
         "Leave a Message",
     ]
 )
@@ -733,9 +856,10 @@ with tab4:
     render_paragraphs(SIGNIFICANCE_TEXT)
 
 with tab5:
+    st.write(TAB_CREDIT)
     st.header("Connection")
     st.write(
-        "This tab turns a feeling into a next step. Instead of only leaving a message, a student can ask for connection and the site will look for 1 to 2 compatible requests."
+        "This tab turns a feeling into a next step. Instead of only leaving a message, a student can ask for connection and the site will look for up to 3 compatible requests."
     )
 
     connection_records = load_json_list(CONNECTION_FILE)
@@ -754,6 +878,49 @@ with tab5:
                 "Looking for study partner",
             ],
             key="connection_goal",
+        )
+        social_style = st.selectbox(
+            "Which social style feels most like you today?",
+            ["More introverted", "Balanced", "More outgoing"],
+            key="connection_social_style",
+        )
+        conversation_preference = st.selectbox(
+            "What kind of conversation would feel best?",
+            ["Deep talk", "Casual talk", "Study-focused", "Activity-based"],
+            key="connection_conversation_preference",
+        )
+        energy_today = st.slider(
+            "Energy level today",
+            min_value=1,
+            max_value=5,
+            value=3,
+            help="1 means very low energy; 5 means very high energy.",
+            key="connection_energy_today",
+        )
+        st.subheader("Sociality Trait Self-Check")
+        st.caption(
+            "These three quick ratings come directly from the project's sociality model."
+        )
+        reciprocation = st.slider(
+            "Reciprocation: I am open when someone reaches out.",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="connection_reciprocation",
+        )
+        endurance = st.slider(
+            "Endurance: I can stay open even if a connection is imperfect at first.",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="connection_endurance",
+        )
+        proactivity = st.slider(
+            "Proactivity: I am willing to initiate or suggest a next step.",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="connection_proactivity",
         )
         availability = st.multiselect(
             "When could you connect?",
@@ -790,6 +957,12 @@ with tab5:
                 "name": name.strip() if name.strip() else "Anonymous",
                 "contact": contact.strip(),
                 "connection_goal": connection_goal,
+                "social_style": social_style,
+                "conversation_preference": conversation_preference,
+                "energy_today": energy_today,
+                "reciprocation": reciprocation,
+                "endurance": endurance,
+                "proactivity": proactivity,
                 "availability": availability,
                 "connection_style": connection_style,
                 "note": note.strip(),
@@ -823,6 +996,310 @@ with tab5:
         st.info("No connection requests yet.")
 
 with tab6:
+    st.write(TAB_CREDIT)
+    st.header("Check-in")
+    st.write(
+        "This tab is an early-warning and action tool. It does not diagnose anyone; it helps students name their current state and immediately get a next step."
+    )
+
+    checkin_records = load_json_list(CHECKIN_FILE)
+
+    with st.form("checkin_form", clear_on_submit=True):
+        checkin_name = st.text_input(
+            "Name, username, or alias",
+            placeholder="Anonymous is okay",
+            key="checkin_name",
+        )
+        mood = st.selectbox(
+            "How are you feeling today?",
+            ["Good", "Okay", "Lonely", "Overwhelmed", "Disconnected"],
+            key="checkin_mood",
+        )
+        loneliness_days = st.slider(
+            "How many days in a row have you felt socially disconnected?",
+            min_value=0,
+            max_value=7,
+            value=0,
+            key="checkin_days",
+        )
+        obstacle = st.selectbox(
+            "What is the biggest barrier right now?",
+            [
+                "I do not know what to say",
+                "I do not know where to go",
+                "I am low energy",
+                "I feel nervous about initiating",
+                "I am okay, just checking in",
+            ],
+            key="checkin_obstacle",
+        )
+        wants_connection = st.checkbox(
+            "I would like the site to recommend using Connection.",
+            key="checkin_wants_connection",
+        )
+        checkin_submitted = st.form_submit_button("Submit Check-in")
+
+        if checkin_submitted:
+            new_checkin = {
+                "name": checkin_name.strip() if checkin_name.strip() else "Anonymous",
+                "mood": mood,
+                "loneliness_days": loneliness_days,
+                "obstacle": obstacle,
+                "wants_connection": wants_connection,
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            checkin_records.append(new_checkin)
+            save_json_list(CHECKIN_FILE, checkin_records)
+            st.success("Your check-in has been saved.")
+
+            if mood in ["Lonely", "Disconnected"] or loneliness_days >= 2:
+                st.warning(
+                    "This pattern suggests the student would benefit from a concrete connection step today."
+                )
+            if wants_connection or mood in ["Lonely", "Disconnected"]:
+                st.info("Recommended next step: open the Connection tab and submit a request.")
+
+            st.subheader("Micro-action suggestions")
+            render_bullets(get_micro_actions(mood, obstacle))
+
+    st.subheader("Check-in Snapshot")
+    if checkin_records:
+        recent_checkins = checkin_records[-10:]
+        lonely_count = sum(
+            1
+            for record in recent_checkins
+            if record.get("mood") in ["Lonely", "Disconnected"]
+            or safe_int(record.get("loneliness_days"), 0) >= 2
+        )
+        st.metric("Recent higher-risk check-ins", lonely_count)
+        st.caption("This count uses only the most recent 10 check-ins.")
+    else:
+        st.info("No check-ins yet.")
+
+with tab7:
+    st.write(TAB_CREDIT)
+    st.header("Class Group Builder")
+    st.write(
+        "This tab demonstrates the project's strongest practical application: using sociality traits to form class discussion groups or project teams."
+    )
+    st.caption(
+        "No login is required. Students submit a course/topic request, and the site suggests compatible groupmates from previous submissions."
+    )
+
+    class_group_records = load_json_list(CLASS_GROUP_FILE)
+
+    with st.form("class_group_form", clear_on_submit=True):
+        group_name = st.text_input("Name, username, or alias", key="group_name")
+        group_contact = st.text_input(
+            "Contact or preferred way to be reached",
+            key="group_contact",
+        )
+        course = st.text_input(
+            "Course or class",
+            placeholder="Example: HNRS, biology, writing seminar",
+            key="group_course",
+        )
+        topic = st.selectbox(
+            "What would you most want to discuss or work on?",
+            [
+                "Loneliness and belonging",
+                "Sociality model",
+                "Biology and health",
+                "Financial stress",
+                "Survey design",
+                "Presentation practice",
+                "General study group",
+            ],
+            key="group_topic",
+        )
+        work_style = st.selectbox(
+            "Preferred group style",
+            [
+                "Quiet focused work",
+                "Discussion-heavy",
+                "Presentation practice",
+                "Shared note-taking",
+                "Mixed style",
+            ],
+            key="group_work_style",
+        )
+        group_availability = st.multiselect(
+            "When could this group meet?",
+            ["Today", "This week", "Weekends", "Evenings", "Between classes", "Online"],
+            key="group_availability",
+        )
+        group_reciprocation = st.slider(
+            "Reciprocation",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="group_reciprocation",
+        )
+        group_endurance = st.slider(
+            "Endurance",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="group_endurance",
+        )
+        group_proactivity = st.slider(
+            "Proactivity",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="group_proactivity",
+        )
+        group_note = st.text_area(
+            "Short note, optional",
+            placeholder="Example: I want a low-pressure group to talk through the presentation.",
+            key="group_note",
+        )
+        group_submitted = st.form_submit_button("Build Class Group")
+
+        if group_submitted:
+            new_group_request = {
+                "name": group_name.strip() if group_name.strip() else "Anonymous",
+                "contact": group_contact.strip(),
+                "course": course.strip(),
+                "topic": topic,
+                "work_style": work_style,
+                "availability": group_availability,
+                "reciprocation": group_reciprocation,
+                "endurance": group_endurance,
+                "proactivity": group_proactivity,
+                "note": group_note.strip(),
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            class_group_records.append(new_group_request)
+            save_json_list(CLASS_GROUP_FILE, class_group_records)
+            st.success("Your class group request has been saved.")
+
+            matches = find_best_matches(
+                new_group_request,
+                class_group_records[:-1],
+                score_class_group_match,
+            )
+            if matches:
+                st.subheader("Suggested Class Group")
+                st.write("You could start a class group with:")
+                for score, match_record in matches:
+                    st.markdown("---")
+                    render_class_group_match(match_record, score, show_contact=True)
+            else:
+                st.info(
+                    "No class group match yet. The request is saved for future matching."
+                )
+
+    st.subheader("Recent Class Group Requests")
+    if class_group_records:
+        for request in reversed(class_group_records[-6:]):
+            st.markdown("---")
+            render_class_group_match(request, show_contact=False)
+    else:
+        st.info("No class group requests yet.")
+
+with tab8:
+    st.write(TAB_CREDIT)
+    st.header("Event Connector")
+    st.write(
+        "This tab is a simple event optimizer. It does not need live campus event data; instead, students name the type of event they would actually attend, and the site connects people with similar event preferences."
+    )
+
+    event_records = load_json_list(EVENT_FILE)
+
+    with st.form("event_form", clear_on_submit=True):
+        event_name = st.text_input("Name, username, or alias", key="event_name")
+        event_contact = st.text_input(
+            "Contact or preferred way to be reached",
+            key="event_contact",
+        )
+        event_type = st.selectbox(
+            "What kind of event would you actually attend?",
+            [
+                "Small-group coffee or food",
+                "Study session",
+                "Club meeting",
+                "Campus walk",
+                "Game or low-pressure activity",
+                "Large social event",
+            ],
+            key="event_type",
+        )
+        event_size = st.selectbox(
+            "Preferred event size",
+            ["1-on-1", "Small group", "Medium group", "Large group"],
+            key="event_size",
+        )
+        event_topic = st.text_input(
+            "Topic, class, club, or interest",
+            placeholder="Example: biology, HNRS, coffee, films, transfer students",
+            key="event_topic",
+        )
+        event_energy = st.slider(
+            "Energy level today",
+            min_value=1,
+            max_value=5,
+            value=3,
+            key="event_energy",
+        )
+        event_availability = st.multiselect(
+            "When could you go?",
+            ["Today", "This week", "Weekends", "Evenings", "Between classes", "Online"],
+            key="event_availability",
+        )
+        event_note = st.text_area(
+            "Short note, optional",
+            placeholder="Example: I want a low-pressure event where conversation has a built-in topic.",
+            key="event_note",
+        )
+        event_submitted = st.form_submit_button("Find Event Connections")
+
+        if event_submitted:
+            new_event_request = {
+                "name": event_name.strip() if event_name.strip() else "Anonymous",
+                "contact": event_contact.strip(),
+                "event_type": event_type,
+                "event_size": event_size,
+                "topic": event_topic.strip(),
+                "energy_today": event_energy,
+                "availability": event_availability,
+                "note": event_note.strip(),
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            event_records.append(new_event_request)
+            save_json_list(EVENT_FILE, event_records)
+            st.success("Your event interest has been saved.")
+
+            st.subheader("Recommended event format")
+            if event_energy <= 2:
+                st.write("A low-pressure small event is the best fit today.")
+            elif event_size == "Large group":
+                st.write("A larger campus event could work, especially with a friend or classmate.")
+            else:
+                st.write("A small or medium activity-based event is likely the best fit.")
+
+            matches = find_best_matches(
+                new_event_request,
+                event_records[:-1],
+                score_event_match,
+            )
+            if matches:
+                st.subheader("People With Similar Event Interests")
+                for score, match_record in matches:
+                    st.markdown("---")
+                    render_event_match(match_record, score, show_contact=True)
+            else:
+                st.info("No event match yet. The request is saved for future matching.")
+
+    st.subheader("Recent Event Interests")
+    if event_records:
+        for request in reversed(event_records[-6:]):
+            st.markdown("---")
+            render_event_match(request, show_contact=False)
+    else:
+        st.info("No event interests yet.")
+
+with tab9:
     st.header("Leave a Message")
     st.write("If someone feels isolated, they can leave a short message below.")
 
