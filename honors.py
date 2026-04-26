@@ -733,7 +733,6 @@ with tab4:
     render_paragraphs(SIGNIFICANCE_TEXT)
 
 with tab5:
-    st.write(TAB_CREDIT)
     st.header("Connection")
     st.write(
         "This tab turns a feeling into a next step. Instead of only leaving a message, a student can ask for connection and the site will look for 1 to 2 compatible requests."
