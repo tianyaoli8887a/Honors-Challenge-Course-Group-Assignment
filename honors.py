@@ -10,7 +10,6 @@ st.set_page_config(page_title="Honors Project", layout="wide")
 BASE_DIR = Path(__file__).resolve().parent
 MESSAGE_FILE = BASE_DIR / "messages.json"
 MATERIALS_FILE = BASE_DIR / "hnrs_materials_extracted.json"
-QR_IMAGE = BASE_DIR / "assets" / "drAeMu.jpg"
 
 MAIN_TITLE = "Honors Project"
 SUBTITLE = "Reducing Loneliness in College-Age Individuals Through Sociality Dynamics"
