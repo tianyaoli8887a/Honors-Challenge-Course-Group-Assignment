@@ -1027,6 +1027,7 @@ with tab6:
 
 with tab7:
     st.header("Suggestions")
+    st.write("Some suggestions you might need also find someone appears similar, to let you know that you are not alone!")
 
     checkin_records = load_json_list(CHECKIN_FILE)
 
