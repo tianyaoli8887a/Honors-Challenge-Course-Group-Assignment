@@ -932,21 +932,21 @@ with tab6:
             "These three quick ratings come directly from the project's sociality model."
         )
         reciprocation = st.slider(
-            "Reciprocation: I am open when someone reaches out.",
+            "I am open when someone reaches out.",
             min_value=1,
             max_value=5,
             value=3,
             key="connection_reciprocation",
         )
         endurance = st.slider(
-            "Endurance: I can stay open even if a connection is imperfect at first.",
+            "I can stay open even if a connection is imperfect at first.",
             min_value=1,
             max_value=5,
             value=3,
             key="connection_endurance",
         )
         proactivity = st.slider(
-            "Proactivity: I am willing to initiate or suggest a next step.",
+            "I am willing to initiate or suggest a next step.",
             min_value=1,
             max_value=5,
             value=3,
