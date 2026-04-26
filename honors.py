@@ -889,7 +889,7 @@ with tab5:
 with tab6:
     st.header("Connection")
     st.write(
-        "This tab turns a feeling into a next step. Instead of only leaving a message, a student can ask for connection and the site will look for up to 3 compatible requests."
+        "Also, Instead of only leaving a message, a student can ask for connection"
     )
 
     connection_records = load_json_list(CONNECTION_FILE)
