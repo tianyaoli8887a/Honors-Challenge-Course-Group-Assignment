@@ -10,6 +10,7 @@ st.set_page_config(page_title="Honors Project", layout="wide")
 BASE_DIR = Path(__file__).resolve().parent
 MESSAGE_FILE = BASE_DIR / "messages.json"
 MATERIALS_FILE = BASE_DIR / "hnrs_materials_extracted.json"
+QR_IMAGE = BASE_DIR / "assets" / "drAeMu.jpg"
 
 MAIN_TITLE = "Honors Project"
 SUBTITLE = "Reducing Loneliness in College-Age Individuals Through Sociality Dynamics"
@@ -69,7 +70,7 @@ The purpose of this study was to better understand and address loneliness among 
 
 METHODS_TEXT = [
     """
-I (credit: River Jordan, and all the text below) came up with the idea of sociality while studying the concept of virtue in philosophy. The beginnings of this process involved me testing conceptual explanations of the loneliness epidemic. Initially, the same hypothetical scenario came to mind. After asking passersby and acquaintances alike, it became clear that my initial conceptions of the category were hitting something real rather than something I imagined; however, this needed testing. My hypothetical went something like this: "Imagine you and 99 other people are sitting in a conference hall. You're all on the brink of starvation and need to eat as soon as possible. Luckily, the room you're stuck in is attached to a fully stocked kitchen. What needs to happen for people to be fed?" Sans some overthought responses, the simplest answer was that someone needed to cook the food, and once they started, it just made sense to cook for others.
+I came up with the idea of sociality while studying the concept of virtue in philosophy. The beginnings of this process involved me testing conceptual explanations of the loneliness epidemic. Initially, the same hypothetical scenario came to mind. After asking passersby and acquaintances alike, it became clear that my initial conceptions of the category were hitting something real rather than something I imagined; however, this needed testing. My hypothetical went something like this: "Imagine you and 99 other people are sitting in a conference hall. You're all on the brink of starvation and need to eat as soon as possible. Luckily, the room you're stuck in is attached to a fully stocked kitchen. What needs to happen for people to be fed?" Sans some overthought responses, the simplest answer was that someone needed to cook the food, and once they started, it just made sense to cook for others.
 """,
     """
 This was my pre-thesis. Everyone was "hungry," but nobody wanted to do the work of cooking the food. This is itself an issue of virtue that many philosophers might recognize immediately. And after testing it out, it at least seemed to make sense. If merely one or two or a few people were lonely, it could just be chalked up to noise. But if the loneliness epidemic is actually an epidemic, it would follow that everyone being lonely is more a matter of failure to want to do the work of creating and ensuring connection. Could it be that people, for whatever reason, viewed relationships as something to extract from as opposed to something to build with the other person? This was something to be aware of, but a hunch alone is not enough to build any rigorous body of evidence.
